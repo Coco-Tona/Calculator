@@ -5,7 +5,7 @@ export default function OperationButton({ operation, dispatch }) {
   return (
     <button
       onClick={() =>
-        dispatch({ type: ACTIONS.ADD_OPERATION, payload: { operation } })
+        dispatch({ type: ACTIONS.ADD_OPERATIONS, payload: { operation } })
       }
     >
       {operation}

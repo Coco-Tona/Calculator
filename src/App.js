@@ -6,97 +6,96 @@ import DigitButton from "./Component/DigitButton";
 import OperationButton from "./Component/OperationButton";
 
 export const ACTIONS = {
-  ADD_DIGIT: "add-digit",
-  ADD_OPERATION: "add-operation",
+  ADD_DIGITS: "add-digits",
+  ADD_OPERATIONS: "add-operations",
   CLEAR: "clear",
-  EVALUATE: "evaluate",
   DELETE: "delete",
+  EVALUATE: "evaluate",
 };
 
 function reducer(state, { type, payload }) {
   switch (type) {
-    case ACTIONS.ADD_DIGIT:
-      if (state.overwrite)
+    case ACTIONS.ADD_DIGITS:
+      if (state.overwrite) {
         return {
           ...state,
           currentOperand: payload.digit,
           overwrite: false,
         };
+      }
 
       if (state.currentOperand === "0" && payload.digit === "0") return state;
-
-      if (state.currentOperand == null && payload.digit === ".") {
+      if (state.currentOperand === "0") {
         return {
           ...state,
-          currentOperand: `0${payload.digit}`,
-        };
-      } else if (payload.digit === "." && state.currentOperand.includes(".")) {
-        return {
-          ...state,
-          // currentOperand: `0${payload.digit}`,
+          currentOperand: payload.digit,
         };
       }
+      if (payload.digit == "." && state.currentOperand == null) {
+        return {
+          // ...state,
+          currentOperand: ` 0${payload.digit}`,
+        };
+      }
+      if (payload.digit === "." && state.currentOperand.includes("."))
+        return state;
       return {
         ...state,
         currentOperand: `${state.currentOperand || ""}${payload.digit}`,
       };
-    case ACTIONS.ADD_OPERATION:
+    case ACTIONS.ADD_OPERATIONS:
       if (state.currentOperand == null && state.previousOperand == null)
         return state;
+
       if (state.previousOperand == null) {
         return {
           ...state,
-          operation: payload.operation,
           previousOperand: state.currentOperand,
           currentOperand: null,
+          operation: payload.operation,
         };
       }
+
       if (state.currentOperand == null) {
         return {
           ...state,
           operation: payload.operation,
         };
       }
+
       return {
         ...state,
-        previousOperand: evaluate(state),
-        operation: payload.operation,
         currentOperand: null,
+        operation: payload.operation,
+        previousOperand: evaluating(state),
+      };
+    case ACTIONS.EVALUATE:
+      if (
+        state.currentOperand == null ||
+        state.currentOperand == null ||
+        state.previousOperand == null
+      )
+        return state;
+      return {
+        ...state,
+        previousOperand: null,
+        operation: null,
+        currentOperand: evaluating(state),
+        overwrite: true,
       };
     case ACTIONS.CLEAR:
       return {
         currentOperand: null,
         previousOperand: null,
       };
-    case ACTIONS.EVALUATE:
-      if (
-        state.currentOperand == null ||
-        state.previousOperand == null ||
-        state.operation == null
-      ) {
-        return state;
-      }
-      return {
-        ...state,
-        previousOperand: null,
-        operation: null,
-        overwrite: true,
-        currentOperand: evaluate(state),
-        // overwrite: true,
-      };
     case ACTIONS.DELETE:
       if (state.currentOperand == null) return state;
-      // if (state.previousOperand == null) {
-      //   return {
-      //     ...state,
-      //   };
-      // }
 
       if (state.overwrite) {
         return {
           ...state,
-          overwrite: false,
           currentOperand: null,
+          // overwrite: false,
         };
       }
 
@@ -108,26 +107,18 @@ function reducer(state, { type, payload }) {
       }
       return {
         ...state,
-        // previousOperand: state.currentOperand,
         currentOperand: state.currentOperand.slice(0, -1),
       };
+    default:
+      return null;
   }
 }
 
-const INTEGER_FORMATTER = new Intl.NumberFormat("en-us", {
-  maximumFractionDigits: 0,
-});
-
-function formatOperand(operand) {
-  if (operand == null) return;
-  const [integer, decimal] = operand.split(".");
-  if (decimal == null) return INTEGER_FORMATTER.format(integer);
-}
-
-function evaluate({ currentOperand, previousOperand, operation }) {
+function evaluating({ currentOperand, previousOperand, operation }) {
   const prev = parseFloat(previousOperand);
   const curr = parseFloat(currentOperand);
-
+  // console.log(prev);
+  // console.log(curr);
   if (isNaN(prev) || isNaN(curr)) return "";
   let computation = "";
   switch (operation) {
@@ -146,11 +137,21 @@ function evaluate({ currentOperand, previousOperand, operation }) {
   }
   return computation.toString();
 }
-
+const INTEGER_FORMATTER = new Intl.NumberFormat("en-us", {
+  maximumFractionDigits: 0,
+});
+function formatOperand(operand) {
+  if (operand === undefined || operand === null) return;
+  // 22
+  // Answer: ['22']
+  const [integer, decimal] = operand.split(".");
+  if (decimal === undefined || decimal === null)
+    return INTEGER_FORMATTER.format(integer);
+  else return INTEGER_FORMATTER.format(integer) + "." + decimal;
+}
 function App() {
   const [{ currentOperand, previousOperand, operation }, dispatch] =
     React.useReducer(reducer, {});
-
   return (
     <div className="container">
       <div className="first-section">
@@ -187,7 +188,10 @@ function App() {
           <OperationButton operation="+" dispatch={dispatch} />
           <DigitButton digit="." dispatch={dispatch} />
           <DigitButton digit="0" dispatch={dispatch} />
-          <button onClick={() => dispatch({ type: ACTIONS.EVALUATE })}>
+          <button
+            className="equal"
+            onClick={() => dispatch({ type: ACTIONS.EVALUATE })}
+          >
             =
           </button>
           <OperationButton operation="-" dispatch={dispatch} />

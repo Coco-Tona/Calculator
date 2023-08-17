@@ -68,6 +68,7 @@ body{
     word-wrap: break-word;
     word-break: break-all;
     line-height: 2.5rem;
+    text-align: right;
 }
 .container .second-section{
     display: flex;
